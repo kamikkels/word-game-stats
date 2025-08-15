@@ -5,10 +5,14 @@ evaluate.py
 A comprehensive word game hand analyzer that calculates the probability of drawing viable hands from a given tile distribution.
 
 Usage:
-    python evaluate.py <wordfile>
+    python evaluate.py <wordfile> [options]
 
 Arguments:
-    wordfile    Path to dictionary file (one word per line)
+    wordfile            Path to dictionary file (one word per line)
+
+Options:
+    --report_every      How many words to check before updating the progress message (defaults to 10_000; Under 1_000 will display no updates)
+    --[j]son            Format output in json format (defaults to false)
 
 Analysis process:
 1. Loads word list and converts to letter frequency counters
@@ -77,7 +81,7 @@ def analysis(word_counters: List[Counter], progress_every: int = 10_000) -> dict
                 stats['dead'] += 1
                 stats['dead_w'] += weight
 
-            if hands_seen % progress_every == 0:
+            if progress_every > 1_000 and hands_seen % progress_every == 0:
                 elapsed = time.perf_counter() - t0
                 print(f"\r{hands_seen:,} hands checked | {stats['dead']:,} dead | {elapsed:,.1f}s taken", end='')
             return
@@ -86,7 +90,7 @@ def analysis(word_counters: List[Counter], progress_every: int = 10_000) -> dict
             return
 
         letter, avail = letters[idx]
-        for k in range(min(avail, left) + 1): # choose k of this letter
+        for k in range(min(avail, left) + 1):
             # number of ways to pick those k tiles from the available copies
             next_weight = weight * math.comb(avail, k)
             cur[letter] += k
@@ -100,22 +104,52 @@ def analysis(word_counters: List[Counter], progress_every: int = 10_000) -> dict
 def main() -> None:
     parser = argparse.ArgumentParser(description = "Analyze Scrabble hands for valid word formation")
     parser.add_argument("wordfile", help = "Path to file containing word list (one word per line)")
+    parser.add_argument('--report_every', type=int, default=10_000, help='how many words to check before updating the progress message (defaults to 10,000; 0 means no updates)')
+    parser.add_argument('--json', '-j', action='store_true', help='Output results in json format')
     args = parser.parse_args()
     
     word_counters = load_word_counters(args.wordfile)
     print(f"Loaded {len(word_counters)} valid words", file = sys.stderr)
     
-    stats = analysis(word_counters)
+    stats = analysis(word_counters, args.report_every)
     
-    print("\n------- Results --------")
-    print(f"Total hands : {stats['total']:,}")
-    print(f"With valid  : {stats['valid']:,} {100 * stats['valid'] / stats['total']:8.4f}%")
-    print(f"No options  : {stats['dead']:,} {100 * stats['dead'] / stats['total']:8.4f}%")
-    print("------- Weighted -------")
-    print(f"Total hands : {TOTAL_HANDS:,}")
-    print(f"With valid  : {stats['valid_w']:,} {100 * stats['valid_w'] / TOTAL_HANDS:8.4f}%")
-    print(f"No options  : {stats['dead_w']:,} {100 * stats['dead_w'] / TOTAL_HANDS:8.4f}%")
-    print("------------------------")
+    if args.json:
+        json_output = f'''{{
+            "results": {{
+                "total_hands": {stats['total']},
+                "with_valid": {{
+                "count": {stats['valid']},
+                "percentage": {100 * stats['valid'] / stats['total']:.4f}
+                }},
+                "no_options": {{
+                "count": {stats['dead']},
+                "percentage": {100 * stats['dead'] / stats['total']:.4f}
+                }}
+            }},
+            "weighted": {{
+                "total_hands": {TOTAL_HANDS},
+                "with_valid": {{
+                "count": {stats['valid_w']},
+                "percentage": {100 * stats['valid_w'] / TOTAL_HANDS:.4f}
+                }},
+                "no_options": {{
+                "count": {stats['dead_w']},
+                "percentage": {100 * stats['dead_w'] / TOTAL_HANDS:.4f}
+                }}
+            }}
+        }}'''
+
+        print(json_output)
+    else:
+        print("\n------- Results --------")
+        print(f"Total hands : {stats['total']:,}")
+        print(f"With valid  : {stats['valid']:,} {100 * stats['valid'] / stats['total']:8.4f}%")
+        print(f"No options  : {stats['dead']:,} {100 * stats['dead'] / stats['total']:8.4f}%")
+        print("------- Weighted -------")
+        print(f"Total hands : {TOTAL_HANDS:,}")
+        print(f"With valid  : {stats['valid_w']:,} {100 * stats['valid_w'] / TOTAL_HANDS:8.4f}%")
+        print(f"No options  : {stats['dead_w']:,} {100 * stats['dead_w'] / TOTAL_HANDS:8.4f}%")
+        print("------------------------")
         
 if __name__ == "__main__":
     main()

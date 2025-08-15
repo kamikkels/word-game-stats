@@ -13,7 +13,6 @@ Options:
     --min-length N             Minimum word length (default: 1)
     --max-length N             Maximum word length (default: 7)
     --verbose                  Enable verbose output
-    --help                     Show this help message
 
 Processing steps:
 1. Filters words by letter inclusion/exclusion rules
