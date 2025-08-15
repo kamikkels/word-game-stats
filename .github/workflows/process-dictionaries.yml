@@ -39,9 +39,9 @@ jobs:
           python evaluate.py "$temp_file" --json --report_every 0 > "output/${filename}.json"
 
           rm "$temp_file"
-          echo "Processed $file -> output/${filename}.txt"
+          echo "Processed $file -> output/${filename}.json"
         done
         
     - uses: stefanzweifel/git-auto-commit-action@v6
       with:
-        file_pattern: 'output/*.txt'
+        file_pattern: 'output/*.json'
