@@ -1,18 +1,49 @@
 #!/usr/bin/env python3
+"""
+evaluate.py
+
+A comprehensive word game hand analyzer that calculates the probability of drawing viable hands from a given tile distribution.
+
+Usage:
+    python evaluate.py <wordfile>
+
+Arguments:
+    wordfile    Path to dictionary file (one word per line)
+
+Analysis process:
+1. Loads word list and converts to letter frequency counters
+2. Generates all possible 7-tile hands using backtracking algorithm
+3. Checks each hand against word list for valid word formation
+4. Accounts for blank tiles (wildcards) as automatic valid hands (all wild hands have a minimum of one valid two letter word available)
+5. Calculates both raw counts and weighted probabilities
+6. Reports percentage of hands that can form valid words
+
+Output statistics:
+- Total unique hand combinations analyzed
+- Number of hands that can form valid words
+- Number of "dead" hands with no word options
+- Weighted analysis accounting for tile frequency distribution
+
+Note: 
+- Weighted results reflect probability based on English Scrabble's tile distribution (e.g., 12 E's vs 1 Z makes E-heavy hands more likely).
+  For different games and editions LETTER_TILES and HAND_SIZE need to be adjusted accordingly
+"""
+
 import argparse, math, sys, time
 from collections import Counter
 from typing import Dict, List, Union
 
 """ --------- variables --------- """
-SCRABBLE_TILES = {
-    'A': 9, 'B': 2, 'C': 2, 'D': 4, 'E': 12, 'F': 2, 'G': 3,
-    'H': 2, 'I': 9, 'J': 1, 'K': 1, 'L': 4, 'M': 2, 'N': 6,
-    'O': 8, 'P': 2, 'Q': 1, 'R': 6, 'S': 4, 'T': 6, 'U': 4,
-    'V': 2, 'W': 2, 'X': 1, 'Y': 2, 'Z': 1, '?': 2,
+LETTER_TILES = {
+    'A': 9, 'B': 2, 'C': 2, 'D': 4, 'E': 12, 'F': 2,
+    'G': 3, 'H': 2, 'I': 9, 'J': 1, 'K': 1, 'L': 4,
+    'M': 2, 'N': 6, 'O': 8, 'P': 2, 'Q': 1, 'R': 6,
+    'S': 4, 'T': 6, 'U': 4, 'V': 2, 'W': 2, 'X': 1,
+    'Y': 2, 'Z': 1, '?': 2, # ? is wild
 }
 
 HAND_SIZE = 7
-TOTAL_HANDS = math.comb(sum(SCRABBLE_TILES.values()), HAND_SIZE)  # 16_007_560_800
+TOTAL_HANDS = math.comb(sum(LETTER_TILES.values()), HAND_SIZE)  # 16_007_560_800 for scrabble
 
 """ --------- helpers ---------- """
 def load_word_counters(path: str) -> List[Counter]:
@@ -27,7 +58,7 @@ def hand_has_word(hand: Counter, word_counters: List[Counter]) -> bool:
 
 """ --------- analysis --------- """
 def analysis(word_counters: List[Counter], progress_every: int = 10_000) -> dict[str, int]:
-    letters = list(SCRABBLE_TILES.items())
+    letters = list(LETTER_TILES.items())
     fact = [math.factorial(i) for i in range(HAND_SIZE + 1)]
 
     stats = dict(valid=0, valid_w=0, dead=0, dead_w=0, total=0)
@@ -51,11 +82,11 @@ def analysis(word_counters: List[Counter], progress_every: int = 10_000) -> dict
                 print(f"\r{hands_seen:,} hands checked | {stats['dead']:,} dead | {elapsed:,.1f}s taken", end='')
             return
             
-        if idx == len(letters):     # ran out of tile types (need to backtrack to where more available letters are)
+        if idx == len(letters): # ran out of tile types (need to backtrack to where more available letters are)
             return
 
         letter, avail = letters[idx]
-        for k in range(min(avail, left) + 1):       # choose k of this letter
+        for k in range(min(avail, left) + 1): # choose k of this letter
             # number of ways to pick those k tiles from the available copies
             next_weight = weight * math.comb(avail, k)
             cur[letter] += k

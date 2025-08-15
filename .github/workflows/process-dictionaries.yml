@@ -1,0 +1,48 @@
+name: Process Dictionary Updates
+
+on:
+  push:
+    paths:
+      - 'dictionaries/*.txt'
+  pull_request:
+    paths:
+      - 'dictionaries/*.txt'
+
+jobs:
+  process-dictionaries:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9.13'
+      
+    - name: Get changed dictionary files
+      id: changed-files
+      uses: tj-actions/changed-files@v41
+      with:
+        files: dictionaries/*.txt
+        
+    - name: Process changed dictionaries
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          echo "Processing $file"
+          filename=$(basename "$file" .txt)
+          temp_file=$(mktemp)
+          
+          python word-processor.py "$file" "$temp_file"
+          python evaluate.py "$temp_file" > "output/${filename}.txt"
+
+          rm "$temp_file"
+          echo "Processed $file -> output/${filename}.txt"
+        done
+        
+    - uses: stefanzweifel/git-auto-commit-action@v6
+      with:
+        file_pattern: 'output/*.txt'
+        

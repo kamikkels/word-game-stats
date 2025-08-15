@@ -5,10 +5,10 @@ word-processor.py
 A robust Scrabble word processor that filters and optimizes word lists.
 
 Usage:
-    python3 word-processor.py <input_file> <output_file> [options]
+    python word-processor.py <input_file> <output_file> [options]
 
 Options:
-    --include-letter LETTER    Include words with specific letter (default: exclude O)
+    --include-letter LETTER    Include words with specific letter
     --exclude-letter LETTER    Exclude words with specific letter
     --min-length N             Minimum word length (default: 1)
     --max-length N             Maximum word length (default: 7)
@@ -45,7 +45,7 @@ class ScrabbleProcessor:
     def __init__(self, exclude_letters: Set[str] = None, include_letters: Set[str] = None,
                  min_length: int = 1, max_length: int = None, verbose: bool = False):
         """Initialize processor with filtering options."""
-        self.exclude_letters = exclude_letters or {'O'}
+        self.exclude_letters = exclude_letters or set()
         self.include_letters = include_letters or set()
         self.min_length = min_length
         self.max_length = max_length
@@ -167,17 +167,17 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    # Basic usage (excludes words with 'O')
-    python3 word-processor.py words.txt output.txt
+    # Basic usage
+    python word-processor.py words.txt output.txt
     
-    # Include words with 'Q' instead of excluding 'O'
-    python3 word-processor.py words.txt output.txt --include-letter Q
+    # Include only words with 'Q'
+    python word-processor.py words.txt output.txt --include-letter Q
     
     # Exclude multiple letters
-    python3 word-processor.py words.txt output.txt --exclude-letter O --exclude-letter Z
+    python word-processor.py words.txt output.txt --exclude-letter ZXO
     
     # Filter by length
-    python3 word-processor.py words.txt output.txt --min-length 3 --max-length 7
+    python word-processor.py words.txt output.txt --min-length 3 --max-length 7
         """
     )
     
@@ -202,12 +202,9 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
     
-    # Handle default behavior (exclude 'O' if no other filters specified)
     exclude_letters = set()
     if args.exclude_letters:
         exclude_letters = {letter.upper() for letter in args.exclude_letters}
-    elif not args.include_letters:
-        exclude_letters = {'O'}  # Default behavior
     
     include_letters = set()
     if args.include_letters:
