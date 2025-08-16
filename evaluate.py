@@ -115,29 +115,29 @@ def main() -> None:
     
     if args.json:
         json_output = f'''{{
-            "results": {{
-                "total_hands": {stats['total']},
-                "with_valid": {{
-                "count": {stats['valid']},
-                "percentage": {100 * stats['valid'] / stats['total']:.4f}
-                }},
-                "no_options": {{
-                "count": {stats['dead']},
-                "percentage": {100 * stats['dead'] / stats['total']:.4f}
-                }}
-            }},
-            "weighted": {{
-                "total_hands": {TOTAL_HANDS},
-                "with_valid": {{
-                "count": {stats['valid_w']},
-                "percentage": {100 * stats['valid_w'] / TOTAL_HANDS:.4f}
-                }},
-                "no_options": {{
-                "count": {stats['dead_w']},
-                "percentage": {100 * stats['dead_w'] / TOTAL_HANDS:.4f}
-                }}
-            }}
-        }}'''
+    "results": {{
+        "total_hands": {stats['total']},
+        "with_valid": {{
+            "count": {stats['valid']},
+            "percentage": {100 * stats['valid'] / stats['total']:.4f}
+        }},
+        "no_options": {{
+            "count": {stats['dead']},
+            "percentage": {100 * stats['dead'] / stats['total']:.4f}
+        }}
+    }},
+    "weighted": {{
+        "total_hands": {TOTAL_HANDS},
+        "with_valid": {{
+            "count": {stats['valid_w']},
+            "percentage": {100 * stats['valid_w'] / TOTAL_HANDS:.4f}
+        }},
+        "no_options": {{
+            "count": {stats['dead_w']},
+            "percentage": {100 * stats['dead_w'] / TOTAL_HANDS:.4f}
+        }}
+    }}
+}}'''
 
         print(json_output)
     else:
