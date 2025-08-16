@@ -1,0 +1,24 @@
+{
+    "results": {
+        "total_hands": 3199724,
+        "with_valid": {
+            "count": 2948703,
+            "percentage": 92.1549
+        },
+        "no_options": {
+            "count": 251021,
+            "percentage": 7.8451
+        }
+    },
+    "weighted": {
+        "total_hands": 16007560800,
+        "with_valid": {
+            "count": 15915965384,
+            "percentage": 99.4278
+        },
+        "no_options": {
+            "count": 91595416,
+            "percentage": 0.5722
+        }
+    }
+}
