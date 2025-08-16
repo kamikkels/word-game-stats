@@ -43,17 +43,16 @@ Weighted statistics based on tile probabilities
 ### Example output 
 
 ```
-Loaded 279,496 valid words
-1,000,000 hands checked | 123,456 dead | 120.3s taken
-
+Loaded 173 valid words
+3,190,000 hands checked | 251,021 dead | 623.4s taken
 ------- Results --------
-Total hands : 1,000,000
-With valid  : 876,544   87.6544%
-No options  : 123,456   12.3456%
+Total hands : 3,199,724
+With valid  : 2,948,703  92.1549%
+No options  : 251,021   7.8451%
 ------- Weighted -------
 Total hands : 16,007,560,800
-With valid  : 14,032,123,456   87.6544%
-No options  : 1,975,437,344    12.3456%
+With valid  : 15,915,965,384  99.4278%
+No options  : 91,595,416   0.5722%
 ------------------------
 ```
 
@@ -71,18 +70,18 @@ To add a new dictionary file:
 
 1. Click the "Fork" button at the top of this repository
 2. Navigate to the dictionaries/ folder in your fork
-3. Click "Add file" → "Create new file"
+3. Click "Add file" -> "Create new file"
 4. Name your file (for consistency please use the format [Dictionary][Year].txt)
 5. Add your dictionary content (one word per line)
 6. Scroll down and click "Commit new file"
-7. Go back to the main page of your fork and click "Contribute" → "Open pull request"
+7. Go back to the main page of your fork and click "Contribute" -> "Open pull request"
 
 ## Code Contributions
 
 1. Fork the repository
-2. Create a feature branch (git checkout -b feature-name)
+2. Create a branch
 3. Make your changes
-4. Submit a pull request
+4. Submit a pull request with an explanation of what the changes do
 
 ## Reporting Issues
 Found a bug? Open an issue with:
