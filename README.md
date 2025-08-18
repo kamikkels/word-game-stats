@@ -1,9 +1,9 @@
-# Scrabble Hand Analyzer
-This Python script analyzes all possible Scrabble hands to determine how many can form valid words using a given word list. 
+# Word Game Hand Analyzer
+This Python script analyzes all possible hands to determine how many can form valid words using a given word list. 
 It performs a full combinatorial sweep of hands based on official tile distributions and reports both raw and weighted statistics.
 
 ## Features 
-Exhaustive analysis of possible Scrabble hands.
+Exhaustive analysis of possible opening hands.
 Determines which hands can form at least one valid word.
 Supports wildcard tiles (?) and weighted probability calculations.
 
@@ -28,7 +28,6 @@ python wordprocessor.py <base-wordlist.txt> <minimal-wordlist.txt>
 ```
 
 3. Run the evaluator
-
 ```
 python evaluate.py <wordlist.txt>
 ```
@@ -39,6 +38,8 @@ The script prints:
 Total number of hands analyzed
 Number and percentage of hands that can form valid words
 Weighted statistics based on tile probabilities
+
+When a new dictionary is added, or existing one is updated a github action has been setup to process it and commit the output into the output dir.
 
 ### Example output 
 
@@ -72,7 +73,7 @@ To add a new dictionary file:
 2. Navigate to the dictionaries/ folder in your fork
 3. Click "Add file" -> "Create new file"
 4. Name your file (for consistency please use the format [Dictionary][Year].txt)
-5. Add your dictionary content (one word per line)
+5. Add your dictionary content (one word, or word + definition per line)
 6. Scroll down and click "Commit new file"
 7. Go back to the main page of your fork and click "Contribute" -> "Open pull request"
 
