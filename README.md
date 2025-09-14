@@ -1,13 +1,16 @@
-# Word Game Hand Analyzer
-This Python script analyzes all possible hands to determine how many can form valid words using a given word list. 
+# Word Game Stats
+A collection of scripts for evaluating game states in different word games 
+
+## Tile Game Hand Analyzer
+This Python script analyzes all possible opening hands in a tile based word game (e.g. Scrabble) to determine how many can form valid words using a given word list. 
 It performs a full combinatorial sweep of hands based on official tile distributions and reports both raw and weighted statistics.
 
-## Features 
+### Features 
 Exhaustive analysis of possible opening hands.
 Determines which hands can form at least one valid word.
 Supports wildcard tiles (?) and weighted probability calculations.
 
-## Usage 
+### Usage 
 1. Prepare a word list
 Create a plain text file with each word on a new line
 
@@ -29,7 +32,7 @@ python wordprocessor.py <base-wordlist.txt> <minimal-wordlist.txt>
 
 3. Run the evaluator
 ```
-python evaluate.py <wordlist.txt>
+python evaluate-hands.py <wordlist.txt>
 ```
 
 4. Output
@@ -41,7 +44,7 @@ Weighted statistics based on tile probabilities
 
 When a new dictionary is added, or existing one is updated a github action has been setup to process it and commit the output into the output dir.
 
-### Example output 
+#### Example output 
 
 ```
 Loaded 173 valid words
@@ -57,16 +60,19 @@ No options  : 91,595,416   0.5722%
 ------------------------
 ```
 
-## How It Works 
+### How It Works 
 Uses backtracking to generate all combinations of 7 tiles.
 Checks each hand against a preloaded list of valid words.
 Wildcards (?) are treated as flexible tiles.
 Computes both raw counts and weighted probabilities using combinatorics to cover all possible starting hands.
 
+## Boggle maximal point grid
+Finds grids that provide a maximum score for a given word list
+
 # Contributing
 We welcome contributions! Here's how you can help:
 
-## Adding Dictionaries (No coding required!)
+## Adding Dictionaries for Tile Games (No coding required!)
 To add a new dictionary file:
 
 1. Click the "Fork" button at the top of this repository

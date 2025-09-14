@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-evaluate.py
+evaluate-hands.py
 
 A comprehensive word game hand analyzer that calculates the probability of drawing viable hands from a given tile distribution.
 
 Usage:
-    python evaluate.py <wordfile> [options]
+    python evaluate-hands.py <wordfile> [options]
 
 Arguments:
     wordfile            Path to dictionary file (one word per line)
