@@ -8,7 +8,7 @@ It performs a full combinatorial sweep of hands based on official tile distribut
 ### Features 
 Exhaustive analysis of possible opening hands.
 Determines which hands can form at least one valid word.
-Supports wildcard tiles (?) and weighted probability calculations.
+Supports wildcard tiles (**?**) and weighted probability calculations.
 
 ### Usage 
 1. Prepare a word list
@@ -16,16 +16,16 @@ Create a plain text file with each word on a new line
 
 Example:
 
-> apple - a fruit
-> zebra
-> quiz
-> house - a building
-> sea
-> pant
-> pants - plural of pant
+> apple - a fruit  
+> zebra  
+> quiz  
+> house - a building  
+> sea  
+> pant  
+> pants - plural of pant  
 
-2. Minimise the word list
-note: capitalisation, and characters after a space will be removed
+2. Minimise the word list  
+_note: capitalisation, and characters after a space will be removed_
 ```
 python wordprocessor.py <base-wordlist.txt> <minimal-wordlist.txt>
 ```
@@ -35,13 +35,13 @@ python wordprocessor.py <base-wordlist.txt> <minimal-wordlist.txt>
 python evaluate-hands.py <wordlist.txt>
 ```
 
-4. Output
-The script prints:
+### Output
+The script prints:  
 
-Total number of hands analyzed
-Number and percentage of hands that can form valid words
-Weighted statistics based on tile probabilities
-
+- Total number of hands analyzed  
+- Number and percentage of hands that can form valid words  
+- Weighted statistics based on tile probabilities  
+  
 When a new dictionary is added, or existing one is updated a github action has been setup to process it and commit the output into the output dir.
 
 #### Example output 
@@ -61,41 +61,43 @@ No options  : 91,595,416   0.5722%
 ```
 
 ### How It Works 
+Finds the minimum set of characters that will provide a staring hand with plays.
 Uses backtracking to generate all combinations of 7 tiles.
 Checks each hand against a preloaded list of valid words.
-Wildcards (?) are treated as flexible tiles.
+Wildcards (?) are treated as flexible tiles (so far in all dictionaries a wild card always produces a valid hand).
 Computes both raw counts and weighted probabilities using combinatorics to cover all possible starting hands.
 
 ## Boggle maximal point grid
 Finds grids that provide a maximum score for a given word list
 
 # Contributing
-We welcome contributions! Here's how you can help:
+Contributions are welcome; here's how you can help:
 
 ## Adding Dictionaries for Tile Games (No coding required!)
 To add a new dictionary file:
 
-1. Click the "Fork" button at the top of this repository
-2. Navigate to the dictionaries/ folder in your fork
-3. Click "Add file" -> "Create new file"
-4. Name your file (for consistency please use the format [Dictionary][Year].txt)
-5. Add your dictionary content (one word, or word + definition per line)
-6. Scroll down and click "Commit new file"
-7. Go back to the main page of your fork and click "Contribute" -> "Open pull request"
+1. Click the "Fork" button at the top of this repository  
+2. Navigate to the `dictionaries` folder in your fork  
+3. Click "Add file" -> "Create new file"  
+4. Name your file (for consistency please use the format [Dictionary][Year].txt)  
+5. Add your dictionary content (one word, or word + definition per line)  
+6. Scroll down and click "Commit new file"  
+7. Go back to the main page of your fork and click "Contribute" -> "Open pull request" 
 
 ## Code Contributions
+If there are additional forms of hand analysis you'd like to see , or ways to improve existing scripts, feel free update this repo:  
 
-1. Fork the repository
-2. Create a branch
-3. Make your changes
-4. Submit a pull request with an explanation of what the changes do
+1. Fork the repository  
+2. Create a branch  
+3. Make your changes  
+4. Submit a pull request with an explanation of what the changes do (and why that's a good thing).  
 
 ## Reporting Issues
-Found a bug? Open an issue with:
-
-1. What you expected
-2. What actually happened
-3. Steps to reproduce
-
+Found a bug? Open an issue with: 
+  
+1. What you expected  
+2. What actually happened  
+3. Steps to reproduce  
+  
 # License 
-See LICENSE
+See LICENSE  
