@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 boggle-evaluator.py
-A comprehensive Boggle grid evaluator that finds optimal grids for maximum scoring.
+A Boggle grid evaluator that finds optimal grids for maximum scoring using a genetic algorithm approach to try finding the best arrangement of dice.
 
 Usage:
     python boggle-evaluator.py <wordfile> [options]
@@ -11,22 +11,18 @@ Arguments:
 
 Options:
     --[s]ize SIZE           Select the boggle variant to test: standard, big (default: standard) 
-    --[i]terations N        Number of optimization iterations (default: 10,000)
-    --[m]ethod METHOD       Optimization method: random, hillclimb, both (default: both)
+    --[g]enerations N       Number of optimization generations to process (default: 1,000)
+    --[p]opulation N        The population size for each generation (default: 50)
     --[v]erbose             Enable verbose output
     --seed N                Random seed for reproducible results
 
 Processing steps:
 1. Loads word list
-2. Generates or optimizes Boggle grids using specified method
+2. Generates and optimizes Boggle grids
 3. Evaluates grids by finding all valid words using DFS traversal
 4. Scores words using standard Boggle point system
+5. Repeat 2-4 for N generations
 5. Reports best grid configuration and achievable score
-
-Optimization methods:
-- Random search: Generates many random grids and selects the best
-- Hill climbing: Iteratively improves grids through local letter substitutions
-- Both: Runs random search first, then hill climbing from best result
 
 Scoring system (standard Boggle):
 - 3-4 letters: 1 point
@@ -76,6 +72,93 @@ class BoggleEvaluator:
                     continue
                 neighbors.append((nr, nc))
         return neighbors
+    
+    def generate_random_grid(self, verbose: bool = False) -> Tuple[List[List[str]], List[str]]:
+        """Generate a random Boggle grid using dice with fixed faces"""
+        dice = self.dice[:]
+        random.shuffle(dice)
+
+        letters = [random.choice(die) for die in dice]
+        grid = [
+            letters[i * self.size:(i + 1) * self.size]
+            for i in range(self.size)
+        ]
+        
+        return grid, dice
+
+    def mutate_grid(self, grid, dice) -> Tuple[List[List[str]], List[str]]:
+        """Create a mutated version of the grid"""
+        new_grid = grid.copy()
+        new_dice = dice.copy()
+        size=self.size
+        
+        mutation_type = random.choice(['swap', 'reroll', 'swap_and_reroll'])
+        
+        if mutation_type == 'swap':
+            i1, j1 = random.sample(range(size-1), 2)
+            i2, j2 = random.sample(range(size-1), 2)
+            new_grid[i1][j1], new_grid[i2][j2] = new_grid[i2][j2], new_grid[i1][j1]
+            new_dice[i1*size+j1], new_dice[i2*size+j2] = new_dice[i2*size+j2], new_dice[i1*size+j1]
+
+        elif mutation_type == 'reroll':
+            i1, j1 = random.sample(range(size-1), 2)
+            new_grid[i1][j1] = random.choice(new_dice[i1*size+j1])
+        
+        elif mutation_type == 'swap_and_reroll':
+            i1, j1 = random.sample(range(size-1), 2)
+            i2, j2 = random.sample(range(size-1), 2)
+            new_grid[i1][j1] = random.choice(new_dice[i1*size+j1])
+            new_grid[i1][j1], new_grid[i2][j2] = new_grid[i2][j2], new_grid[i1][j1]
+            new_dice[i1*size+j1], new_dice[i2*size+j2] = new_dice[i2*size+j2], new_dice[i1*size+j1]
+        
+        return new_grid, new_dice
+    
+    def optimize_grid(self, generations=1000, population_size=50):
+        """Use genetic algorithm to find optimal grid"""
+        # Initialize population with random samples
+        population = []
+        for _ in range(population_size):
+            population.append(self.generate_random_grid())
+        
+        best_grid = None
+        best_score = -1
+        best_words = []
+        
+        for generation in range(generations):
+            # Score the grids
+            scored_population = []
+            for grid, dice in population:
+                score, formed_words = self.calculate_grid_score(grid)
+                scored_population.append((score, grid, dice, formed_words))
+            
+            # Sort by score
+            scored_population.sort(reverse=True)
+            
+            # Update best
+            if scored_population[0][0] > best_score:
+                best_score = scored_population[0][0]
+                best_grid = scored_population[0][1].copy()
+                best_words = scored_population[0][3].copy()
+                print(f"Generation {generation}: New best score {best_score}, formed {len(best_words)} words")
+                if(self.verbose):
+                    print(f'Best grid:')
+                    self.print_grid(best_grid)
+            
+            ### Create next generation ###
+            survivors = [(grid, dice) for _, grid, dice, _ in scored_population[:population_size//4]]
+            new_population = survivors.copy()
+            
+            while len(new_population) < population_size:
+                if random.random() < 0.3:  # 30% random
+                    new_population.append(self.generate_random_grid())
+                else:  # 70% mutations
+                    (parent_grid, parent_dice) = random.choice(survivors)
+                    child = self.mutate_grid(parent_grid, parent_dice)
+                    new_population.append(child)
+            
+            population = new_population
+        
+        return best_grid, best_score, best_words    
 
     def dfs(self, grid: List[List[str]], row: int, col: int, path: str, found_words: Dict[str, int] = {}) -> Dict[str, int]:
         # Bail if we've got no hope of a word
@@ -89,7 +172,7 @@ class BoggleEvaluator:
         
         # Explore neighbors
         neighbors = self.get_neighbors(row, col)
-        for nr, nc in self.get_neighbors(row, col):
+        for nr, nc in neighbors:
             new_path = path + grid[nr][nc]
             found_words = self.dfs(grid, nr, nc, new_path, found_words)
         
@@ -99,7 +182,7 @@ class BoggleEvaluator:
         """Find all valid words in the grid using DFS"""
         found_words = {}
         
-        # Start DFS from each position
+        # DFS from each position
         for i in range(self.size):
             for j in range(self.size):
                 self.dfs(grid, i, j, grid[i][j], found_words)
@@ -111,100 +194,13 @@ class BoggleEvaluator:
         found_words = self.find_words_in_grid(grid)
         total_score = sum(found_words.values())
         return total_score, found_words
-    
-    def generate_random_grid(self, verbose: bool = False) -> Tuple[List[List[str]], List[str]]:
-        """Generate a random Boggle grid using dice with fixed faces"""
-        dice = self.dice[:]
-        random.shuffle(dice)
 
-        letters = [random.choice(die) for die in dice]
-        grid = [
-            letters[i * self.size:(i + 1) * self.size]
-            for i in range(self.size)
-        ]
-
-        return grid, dice
-    
-    def optimize_grid_random_search(self, iterations: int = 1000) -> Tuple[List[List[str]], List[str], int, Dict[str, int]]:
-        """Find optimal grid using random search"""
-        best_grid = None
-        best_dice = self.dice
-        best_score = 0
-        best_words = {}
-        
-        for i in range(iterations):
-            grid, best_dice = self.generate_random_grid()
-            score, words = self.calculate_grid_score(grid)
-            
-            if score > best_score:
-                best_score = score
-                best_grid = [row[:] for row in grid]
-                best_words = words.copy()
-                
-            if (self.verbose and i + 1) % 100 == 0:
-                print(f'Iteration {i + 1}/{iterations}, Best score so far: {best_score}')
-        
-        return best_grid, best_dice, best_score, best_words
-    
-    def optimize_grid_hill_climbing(self, initial_grid: List[List[str]] = None, initial_dice: List[str] = None, iterations: int = 10_000) -> Tuple[List[List[str]], int, Dict[str, int]]:
-        """Optimize grid using hill climbing (local search)"""
-        if initial_grid is None:
-            current_grid, current_dice = self.generate_random_grid()
-        else:
-            current_grid = [row[:] for row in initial_grid]
-            current_dice = initial_dice
-        
-        current_score, current_words = self.calculate_grid_score(current_grid)
-        best_grid = [row[:] for row in current_grid]
-        best_score = current_score
-        best_words = current_words.copy()
-                
-        for iteration in range(iterations):
-            # Try to improve the grid a bit
-            improved = False
-            
-            for i in range(self.size):
-                for j in range(self.size):
-                    original_letter = current_grid[i][j]
-                    
-                    # Reroll some dice
-                    for _ in range(5):
-                        new_letter = random.choice(current_dice[i + (j * self.size)])
-                        if new_letter != original_letter:
-                            current_grid[i][j] = new_letter
-                            score, words = self.calculate_grid_score(current_grid)
-                            
-                            if score > current_score:
-                                current_score = score
-                                current_words = words
-                                improved = True
-                                
-                                if score > best_score:
-                                    best_score = score
-                                    best_grid = [row[:] for row in current_grid]
-                                    best_words = words.copy()
-                                break
-
-                    if not improved:
-                        current_grid[i][j] = original_letter
-            
-            if (iteration + 1) % 500 == 0:
-                if (self.verbose):
-                    if (iteration + 1) > 500:
-                        print(f'\033[13F')
-                    self.print_grid(current_grid)
-                    print(f'Iteration {iteration + 1}/{iterations}, Best score: {best_score}, Current: {current_score}')
-                if (iteration + 1) % 1000 == 0: # Mix things up a bit and try starting from a different grid
-                    current_grid, current_dice = self.generate_random_grid()
-        
-        return best_grid, best_score, best_words
-    
-    def print_grid(self, grid: List[List[str]]):
+    def print_grid(self, grid: List[str]):
         """Pretty print a grid"""
-        print('+' + '-' * (self.size * 4 - 1) + '+')
-        for row in grid:
-            print('| ' + ' | '.join(row) + ' |')
-            print('+' + '-' * (self.size * 4 - 1) + '+')
+        print('+' + '-' * (self.size*2 + 1) + '+')
+        for i in range(self.size):
+            print('| ' + ' '.join(grid[i]) + ' |')
+        print('+' + '-' * (self.size*2 + 1) + '+')
     
     def print_results(self, grid: List[List[str]], score: int, words: Dict[str, int]):
         """Print evaluation results"""
@@ -220,8 +216,8 @@ class BoggleEvaluator:
             for word, word_score in sorted_words:
                 print(f'  {word}: {word_score} points')
 
-    # Make a basic trie out of the word list
     def make_trie(self, words: List[str]) -> dict:
+        """Make a basic trie out of the word list"""
         trie = dict()
         for word in words:
             step = trie
@@ -230,8 +226,8 @@ class BoggleEvaluator:
             step['_end_'] = '_end_'
         return trie
 
-    # Check the trie for a given path
     def in_trie(self, path) -> bool:
+        """Check the trie for a given path"""
         current_dict = self.word_trie
         for letter in path:
             if letter not in current_dict:
@@ -260,7 +256,7 @@ def main() -> None:
         epilog="""
 Examples:
   python boggle-evaluator.py words.txt
-  python boggle-evaluator.py words.txt --size big --iterations 500 --method hillclimb
+  python boggle-evaluator.py words.txt --size big --generations 500 --population 75
   python boggle-evaluator.py words.txt --verbose --seed 42
         """
     )
@@ -268,8 +264,8 @@ Examples:
     parser.add_argument('wordfile', help='Word list file (one word per line)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose output')
     parser.add_argument('--size', '-s', choices=['standard', 'big'], default='standard', help='boggle size (default: standard)')
-    parser.add_argument('--iterations', '-i', type=int, default=10_000, help='Number of optimization iterations (default: 10,000)')
-    parser.add_argument('--method', '-m', choices=['random', 'hillclimb', 'both'], default='both', help='Optimization method (default: both)')
+    parser.add_argument('--generations', '-g', type=int, default=1_000, help='Number of optimization generations to process (default: 1,000)')
+    parser.add_argument('--population', '-p', type=int, default=50, help='The population size for each generation (default: 50)')
     parser.add_argument('--seed', type=int, help='Random seed for reproducible results')
     
     args = parser.parse_args()
@@ -291,8 +287,8 @@ Examples:
         else:
             print(f'Grid size: 4x4')
         print(f'Word list: {len(words)} words')
-        print(f'Method: {args.method}')
-        print(f'Iterations: {args.iterations}')
+        print(f'Generations: {args.generations}')
+        print(f'Population: {args.population}')
         if args.seed:
             print(f'Random seed: {args.seed}')
     
@@ -301,42 +297,12 @@ Examples:
     best_words = {}
     best_method = ''
     
-    # Run optimization based on method
-    if args.method in ['random', 'both']:
-        if args.verbose:
-            print(f'\nRunning random search optimization ({args.iterations} iterations)...')
+    # Find optimal grid
+    best_grid, best_score, best_words = evaluator.optimize_grid(
+        generations=args.generations,
+        population_size=args.population
+    )
         
-        grid, dice, score, words_found = evaluator.optimize_grid_random_search(iterations=args.iterations)
-        
-        if score > best_score:
-            best_grid, best_score, best_words, best_method = grid, score, words_found, 'random_search'
-        
-        if args.verbose:
-            print(f'\nRandom search result:')
-            evaluator.print_results(grid, score, words_found)
-    
-    if args.method in ['hillclimb', 'both']:
-        if args.verbose:
-            print(f'\nRunning hill climbing optimization ({args.iterations} iterations)...')
-        
-        # Use best random grid as starting point if available
-        initial_grid = best_grid if args.method == 'both' else None
-        initial_dice = best_dice if args.method == 'both' else None
-
-        grid, score, words_found = evaluator.optimize_grid_hill_climbing(
-            initial_grid=initial_grid,
-            initial_dice=initial_dice,
-            iterations=args.iterations
-        )
-        
-        if score > best_score:
-            best_grid, best_score, best_words, best_method = grid, score, words_found, 'hill_climbing'
-        
-        evaluator.print_results(grid, score, words_found)
-    
-    # Output final result
-    if args.verbose:
-        print(f'Best method: {best_method}')
     evaluator.print_results(best_grid, best_score, best_words)
 
 if __name__ == '__main__':
