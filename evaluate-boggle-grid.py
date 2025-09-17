@@ -61,8 +61,13 @@ class BoggleEvaluator:
             'DISTTY', 'EEGHNW', 'EEINSU', 'EHRTVW',
             'EIOSST', 'ELRTTY', 'HIMNUQ', 'HLNNRZ'
         ]
+
+        self.neighbors_cache = {}
+        for i in range(self.size):
+            for j in range(self.size):
+                self.neighbors_cache[(i, j)] = self.generate_neighbors(i, j)
         
-    def get_neighbors(self, row: int, col: int) -> List[Tuple[int, int]]:
+    def generate_neighbors(self, row: int, col: int) -> List[Tuple[int, int]]:
         """Get all valid neighboring positions (including diagonals)"""
         neighbors = []
         for dr in [-1, 0, 1]:
@@ -72,6 +77,10 @@ class BoggleEvaluator:
                     continue
                 neighbors.append((nr, nc))
         return neighbors
+
+    def get_neighbors(self, row: int, col: int) -> List[Tuple[int, int]]:
+        """Get all valid neighboring positions (cached)"""
+        return self.neighbors_cache[(row, col)]
     
     def generate_random_grid(self, verbose: bool = False) -> Tuple[List[List[str]], List[str]]:
         """Generate a random Boggle grid using dice with fixed faces"""
@@ -113,12 +122,15 @@ class BoggleEvaluator:
         
         return new_grid, new_dice
     
-    def optimize_grid(self, generations=1000, population_size=50):
+    def optimize_grid(self, generations=1_000, population_size=50) -> Tuple[List[List[str]], int, Dict[str, int]]:
         """Use genetic algorithm to find optimal grid"""
         # Initialize population with random samples
         population = []
         for _ in range(population_size):
             population.append(self.generate_random_grid())
+        
+        self.print_grid(random.choice(population)[0])
+        print(f"First generation staring")
         
         best_grid = None
         best_score = -1
@@ -132,17 +144,20 @@ class BoggleEvaluator:
                 scored_population.append((score, grid, dice, formed_words))
             
             # Sort by score
-            scored_population.sort(reverse=True)
+            scored_population.sort(key=lambda x: x[0], reverse=True)
             
             # Update best
             if scored_population[0][0] > best_score:
                 best_score = scored_population[0][0]
                 best_grid = scored_population[0][1].copy()
                 best_words = scored_population[0][3].copy()
-                print(f"Generation {generation}: New best score {best_score}, formed {len(best_words)} words")
-                if(self.verbose):
-                    print(f'Best grid:')
+                
+                if self.verbose:
+                    print(f'\033[9F')
                     self.print_grid(best_grid)
+                else:                    
+                    print(f'\033[1F')
+                print(f"Generation {generation}: New best {best_score} from {len(best_words)} words")
             
             ### Create next generation ###
             survivors = [(grid, dice) for _, grid, dice, _ in scored_population[:population_size//4]]
@@ -157,25 +172,29 @@ class BoggleEvaluator:
                     new_population.append(child)
             
             population = new_population
+
+            if self.verbose and generation % 250 == 0:
+                print(f"\033[1FGeneration {generation}: Best score {best_score} from {len(best_words)} words")
+
         
         return best_grid, best_score, best_words    
 
-    def dfs(self, grid: List[List[str]], row: int, col: int, path: str, found_words: Dict[str, int] = {}) -> Dict[str, int]:
-        # Bail if we've got no hope of a word
-        if not self.in_trie(path):
-            return found_words
-
+    def dfs(self, grid: List[List[str]], row: int, col: int, path: List[str], node: dict, found_words: Dict[str, int] = {}):
+        """Recursive DFS with trie node"""
         # Check if current path is a valid word
-        if len(path) >= 3 and path in self.word_set:
-            if path not in found_words:
-                found_words[path] = self.scoring.get(len(path), 11)
-        
+        if "_end_" in node and len(path) >= 3:
+            word = ''.join(path)
+            if word not in found_words:
+                found_words[word] = self.scoring.get(len(word), 11)
+
         # Explore neighbors
-        neighbors = self.get_neighbors(row, col)
-        for nr, nc in neighbors:
-            new_path = path + grid[nr][nc]
-            found_words = self.dfs(grid, nr, nc, new_path, found_words)
-        
+        for nr, nc in self.get_neighbors(row, col):
+            letter = grid[nr][nc]
+            if letter in node:
+                path.append(letter)
+                self.dfs(grid, nr, nc, path, node[letter], found_words)
+                path.pop()
+
         return found_words
     
     def find_words_in_grid(self, grid: List[List[str]]) -> Dict[str, int]:
@@ -185,7 +204,12 @@ class BoggleEvaluator:
         # DFS from each position
         for i in range(self.size):
             for j in range(self.size):
-                self.dfs(grid, i, j, grid[i][j], found_words)
+                letter = grid[i][j]
+                node = self.word_trie.get(letter)
+                if node is None:
+                    continue
+
+                self.dfs(grid, i, j, [letter], node, found_words)
         
         return found_words
     
