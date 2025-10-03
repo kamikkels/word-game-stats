@@ -36,7 +36,7 @@ jobs:
           temp_file=$(mktemp)
           
           python word-processor.py "$file" "$temp_file"
-          python evaluate.py "$temp_file" --json --report_every 0 > "output/${filename}.json"
+          python evaluate-hands.py "$temp_file" --json --report_every 0 > "output/${filename}.json"
 
           rm "$temp_file"
           echo "Processed $file -> output/${filename}.json"
